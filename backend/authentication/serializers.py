@@ -4,21 +4,6 @@ from django.contrib.auth.password_validation import validate_password
 
 CustomUser = get_user_model()
 
-class UserSerializer(serializers.ModelSerializer):
-    """Serializer for retrieving and updating user details."""
-
-    class Meta:
-        model = get_user_model()
-        fields = [
-            "id",
-            "username",
-            "email",
-            "profile_picture",
-            "bio",
-            "karma_points",
-            "role",
-        ]
-        read_only_fields = ["role", "karma_points"]
 
 class RegisterSerializer(serializers.ModelSerializer):
     """Serializer for user registration."""
@@ -41,7 +26,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = CustomUser.objects.create(
-            username=validated_data["username"], email=validated_data["email"]
+            username=validated_data["username"], email=validated_data["email"],
         )
         user.set_password(validated_data["password"])
         user.save()

@@ -9,7 +9,7 @@ class CustomUser(AbstractUser):
         ("admin", "Admin"),
     )
 
-    email = models.EmailField(unique=True)
+    email = models.EmailField(unique=True, blank=False)
     profile_picture = models.ImageField(
         upload_to="profile_pics/", null=True, blank=True
     )
