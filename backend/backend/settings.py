@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     # Local apps
     "users",
     "authentication",
+    "subreddits",
     # Third-party apps
     "rest_framework",
     "rest_framework_simplejwt",
