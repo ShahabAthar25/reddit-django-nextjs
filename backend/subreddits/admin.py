@@ -1,5 +1,9 @@
 from django.contrib import admin
-from .models import Subreddit
+from .models import Subreddit, Rule
+
+class RuleInline(admin.TabularInline):
+    model = Rule
+    extra = 1
 
 @admin.register(Subreddit)
 class SubredditAdmin(admin.ModelAdmin):
@@ -20,4 +24,16 @@ class SubredditAdmin(admin.ModelAdmin):
         }),
     )
     filter_horizontal = ('members',)
+    inlines = [RuleInline]
 
+@admin.register(Rule)
+class RuleAdmin(admin.ModelAdmin):
+    list_display = ('title', 'subreddit')
+    search_fields = ('title', 'subreddit__name')
+    list_filter = ('subreddit',)
+    
+    fieldsets = (
+        ('Rule Information', {
+            'fields': ('subreddit', 'title', 'description')
+        }),
+    )
