@@ -1,20 +1,32 @@
-from rest_framework import viewsets, status
+from core.permissions import IsOwnerOrReadOnly
+from post.models import Post
+from post.serializers import PostSerializer
+from rest_framework import generics, status, viewsets
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Subreddit, Rule
-from .serializers import SubredditSerializer, RuleSerializer
+from .models import Rule, Subreddit
+from .serializers import RuleSerializer, SubredditSerializer
 
 
 class SubredditViewSet(viewsets.ModelViewSet):
     queryset = Subreddit.objects.all()
     serializer_class = SubredditSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
+
+
+class SubredditPostList(generics.ListAPIView):
+    serializer_class = PostSerializer
+
+    def get_queryset(self):
+        subreddit_id = self.kwargs["subreddit_id"]
+        return Post.objects.filter(subreddit_id=subreddit_id)
 
 
 class JoinLeaveSubredditView(APIView):
@@ -31,7 +43,8 @@ class JoinLeaveSubredditView(APIView):
         if subreddit.members.filter(id=request.user.id).exists():
             subreddit.members.remove(request.user)
             return Response(
-                {"message": "Successfully left the subreddit"}, status=status.HTTP_200_OK
+                {"message": "Successfully left the subreddit"},
+                status=status.HTTP_200_OK,
             )
         else:
             subreddit.members.add(request.user)

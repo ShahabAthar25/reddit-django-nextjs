@@ -6,4 +6,5 @@ urlpatterns = [
     path('api/auth/', include('authentication.urls')),
     path('api/users/', include('users.urls')),
     path('api/subreddits/', include('subreddits.urls')),
+    path('api/posts/', include('post.urls')),
 ]
