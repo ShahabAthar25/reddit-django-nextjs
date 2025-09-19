@@ -12,8 +12,8 @@ class Subreddit(models.Model):
     name = models.CharField(
         max_length=100, unique=True, validators=[validate_subreddit_name]
     )
-    description = models.TextField(max_length=500)
-    creator = models.ForeignKey(
+    description = models.TextField(max_length=500, null=True, blank=True)
+    created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="created_subreddits",

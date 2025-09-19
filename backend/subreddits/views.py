@@ -2,13 +2,13 @@ from core.permissions import IsOwnerOrReadOnly
 from post.models import Post
 from post.serializers import PostSerializer
 from rest_framework import generics, status, viewsets
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Rule, Subreddit
+from .permissions import IsSubredditOwner
 from .serializers import RuleSerializer, SubredditSerializer
 
 
@@ -56,25 +56,11 @@ class JoinLeaveSubredditView(APIView):
 
 class RuleViewSet(viewsets.ModelViewSet):
     serializer_class = RuleSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsSubredditOwner]
 
     def get_queryset(self):
         return Rule.objects.filter(subreddit_id=self.kwargs["subreddit_pk"])
 
     def perform_create(self, serializer):
         subreddit = Subreddit.objects.get(pk=self.kwargs["subreddit_pk"])
-        if self.request.user != subreddit.creator:
-            raise PermissionDenied("You are not the creator of this subreddit.")
         serializer.save(subreddit=subreddit)
-
-    def perform_update(self, serializer):
-        subreddit = self.get_object().subreddit
-        if self.request.user != subreddit.creator:
-            raise PermissionDenied("You are not the creator of this subreddit.")
-        serializer.save()
-
-    def perform_destroy(self, instance):
-        subreddit = instance.subreddit
-        if self.request.user != subreddit.creator:
-            raise PermissionDenied("You are not the creator of this subreddit.")
-        instance.delete()

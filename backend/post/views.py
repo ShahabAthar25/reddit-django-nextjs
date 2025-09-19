@@ -1,14 +1,15 @@
+from core.permissions import IsOwnerOrReadOnly
 from django.core.cache import cache
 from django.db.models import Count
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+from rest_framework.views import status
 
-from core.permissions import IsOwnerOrReadOnly
+from .models import Comment, Post
+from .serializers import CommentSerializer, PostSerializer
 
-from .models import Post, Comment
-from .serializers import PostSerializer, CommentSerializer
 
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all().order_by("-created_at")
@@ -31,6 +32,38 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(trending_posts, many=True)
         cache.set("trending_posts", serializer.data, 60 * 15)  # Cache for 15 minutes
         return Response(serializer.data)
+
+    @action(detail=True, methods=["post"])
+    def upvote(self, request, pk=None):
+        post = self.get_object()
+        user = self.request.user
+
+        if post.upvotes.filter(id=user.id).exists():
+            post.upvotes.remove(user)
+            return Response({"msg": "upvote removed"}, status=status.HTTP_200_OK)
+        else:
+            post.upvotes.add(user)
+
+            if post.downvotes.filter(id=user.id).exists():
+                post.downvotes.remove(user)
+
+            return Response({"status": "Upvoted"}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"])
+    def downvote(self, request, pk=None):
+        post = self.get_object()
+        user = self.request.user
+
+        if post.downvotes.filter(id=user.id).exists():
+            post.downvotes.remove(user)
+            return Response({"msg": "Downvote removed"}, status=status.HTTP_200_OK)
+        else:
+            post.downvotes.add(user)
+
+            if post.upvotes.filter(id=user.id).exists():
+                post.upvotes.remove(user)
+
+            return Response({"status": "Downvoted"}, status=status.HTTP_200_OK)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
