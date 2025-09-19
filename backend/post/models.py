@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
-
 from subreddits.models import Subreddit
 
 
@@ -23,19 +22,21 @@ class Post(models.Model):
         settings.AUTH_USER_MODEL, related_name="downvoted_posts", blank=True
     )
 
-    def clean(self):
-        super().clean()
-        if not self.description and not self.image:
-            raise ValidationError("At least one of description or image is required.")
-
     def __str__(self):
         return self.title
 
 
 class Comment(models.Model):
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
+    post = models.ForeignKey(
+        Post, on_delete=models.CASCADE, related_name="post_comment"
+    )
+    parent = models.ForeignKey(
+        "self", on_delete=models.CASCADE, related_name="replies", null=True, blank=True
+    )
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="comments"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="owner_comment",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     text = models.TextField(blank=True)
@@ -46,11 +47,6 @@ class Comment(models.Model):
     downvotes = models.ManyToManyField(
         settings.AUTH_USER_MODEL, related_name="downvoted_comments", blank=True
     )
-
-    def clean(self):
-        super().clean()
-        if not self.text and not self.image:
-            raise ValidationError("At least one of text or image is required.")
 
     def __str__(self):
         return f"Comment by {self.created_by} on {self.post}"

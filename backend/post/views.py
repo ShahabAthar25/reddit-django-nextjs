@@ -74,5 +74,11 @@ class CommentViewSet(viewsets.ModelViewSet):
         return Comment.objects.filter(post_id=self.kwargs["post_pk"])
 
     def perform_create(self, serializer):
-        post = Post.objects.get(pk=self.kwargs["post_pk"])
-        serializer.save(created_by=self.request.user, post=post)
+        post = Post.objects.filter(id=self.kwargs["post_pk"]).first()
+        parent_id = self.request.data.get("parent")
+
+        parent = None
+        if parent_id:
+            parent = Comment.objects.get(id=parent_id)
+
+        serializer.save(created_by=self.request.user, post=post, parent=parent)

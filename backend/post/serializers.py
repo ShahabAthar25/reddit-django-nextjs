@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from users.serializers import UserSerializer
 
 from .models import Comment, Post
 
@@ -30,7 +31,25 @@ class PostSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    upvotes = serializers.SerializerMethodField()
+    downvotes = serializers.SerializerMethodField()
+    created_by = UserSerializer(read_only=True)
+
     class Meta:
         model = Comment
-        fields = "__all__"
-        read_only_fields = ["created_by", "post"]
+        fields = [
+            "id",
+            "created_by",
+            "created_at",
+            "text",
+            "image",
+            "upvotes",
+            "downvotes",
+        ]
+        read_only_fields = ["created_by", "post", "parent"]
+
+    def get_upvotes(self, obj):
+        return obj.upvotes.count()
+
+    def get_downvotes(self, obj):
+        return obj.downvotes.count()
