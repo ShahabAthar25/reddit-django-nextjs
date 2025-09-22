@@ -40,7 +40,7 @@ class PostViewSet(viewsets.ModelViewSet):
 
         if post.upvotes.filter(id=user.id).exists():
             post.upvotes.remove(user)
-            return Response({"msg": "upvote removed"}, status=status.HTTP_200_OK)
+            return Response({"msg": "Upvote removed"}, status=status.HTTP_200_OK)
         else:
             post.upvotes.add(user)
 
@@ -56,14 +56,14 @@ class PostViewSet(viewsets.ModelViewSet):
 
         if post.downvotes.filter(id=user.id).exists():
             post.downvotes.remove(user)
-            return Response({"msg": "Downvote removed"}, status=status.HTTP_200_OK)
+            return Response({"detail": "Downvote removed"}, status=status.HTTP_200_OK)
         else:
             post.downvotes.add(user)
 
             if post.upvotes.filter(id=user.id).exists():
                 post.upvotes.remove(user)
 
-            return Response({"status": "Downvoted"}, status=status.HTTP_200_OK)
+            return Response({"detail": "Downvoted"}, status=status.HTTP_200_OK)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -82,3 +82,35 @@ class CommentViewSet(viewsets.ModelViewSet):
             parent = Comment.objects.get(id=parent_id)
 
         serializer.save(created_by=self.request.user, post=post, parent=parent)
+
+    @action(detail=True, methods=["post"])
+    def upvote(self, request, post_pk, pk=None):
+        comment = self.get_object()
+        user = self.request.user
+
+        if comment.upvotes.filter(id=user.id).exists():
+            comment.upvotes.remove(user)
+            return Response({"detail": "Upvote removed"}, status=status.HTTP_200_OK)
+        else:
+            comment.upvotes.add(user)
+
+            if comment.downvotes.filter(id=user.id).exists():
+                comment.downvotes.remove(user)
+
+            return Response({"detail": "Upvoted"}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"])
+    def downvote(self, request, post_pk, pk=None):
+        comment = self.get_object()
+        user = self.request.user
+
+        if comment.downvotes.filter(id=user.id).exists():
+            comment.downvotes.remove(user)
+            return Response({"detail": "Downvote removed"}, status=status.HTTP_200_OK)
+        else:
+            comment.downvotes.add(user)
+
+            if comment.upvotes.filter(id=user.id).exists():
+                comment.upvotes.remove(user)
+
+            return Response({"detail": "Downvoted"}, status=status.HTTP_200_OK)
