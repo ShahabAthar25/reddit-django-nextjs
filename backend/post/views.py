@@ -1,3 +1,4 @@
+from .filters import PostFilter
 from core.permissions import IsOwnerOrReadOnly
 from django.core.cache import cache
 from django.db.models import Count
@@ -6,15 +7,28 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import status
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
 
 from .models import Comment, Post
 from .serializers import CommentSerializer, PostSerializer
 
 
 class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.all().order_by("-created_at")
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = PostFilter
+    search_fields = ["title", "description", "created_by__username"]
+    ordering_fields = ["created_at", "upvotes_count", "downvotes_count", "net_score"]
+
+    def get_queryset(self):
+        return Post.objects.annotate(
+            upvotes_count=Count("upvotes"),
+            downvotes_count=Count("downvotes"),
+            net_score=Count("upvotes") - Count("downvotes"),
+        ).order_by("-created_at")
+
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
@@ -71,7 +85,9 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
 
     def get_queryset(self):
-        return Comment.objects.filter(post_id=self.kwargs["post_pk"])
+        return Comment.objects.filter(post_id=self.kwargs["post_pk"]).annotate(
+            upvote_count=Count("upvotes"), downvote_count=Count("downvotes"), net_score=Count("upvotes") - Count("downvotes")
+        ).order_by("-created_at")
 
     def perform_create(self, serializer):
         post = Post.objects.filter(id=self.kwargs["post_pk"]).first()

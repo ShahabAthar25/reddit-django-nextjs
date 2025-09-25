@@ -2,12 +2,25 @@ from rest_framework import serializers
 from users.serializers import UserSerializer
 
 from .models import Comment, Post
+from subreddits.models import Subreddit
 
+class PostSubredditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subreddit
+        fields = ["id", "name", "icon"]
 
 class PostSerializer(serializers.ModelSerializer):
-    upvotes = serializers.SerializerMethodField()
-    downvotes = serializers.SerializerMethodField()
+    upvotes = serializers.IntegerField(source="upvote_count", read_only=True)
+    downvotes = serializers.IntegerField(source="downvote_count", read_only=True)
 
+    created_by = UserSerializer(read_only=True)
+
+    subreddit_id = serializers.PrimaryKeyRelatedField(
+        queryset=Subreddit.objects.all(),
+        source="subreddit",
+        write_only=True
+    )
+    subreddit = PostSubredditSerializer(read_only=True)
     class Meta:
         model = Post
         fields = [
@@ -18,21 +31,16 @@ class PostSerializer(serializers.ModelSerializer):
             "image",
             "created_by",
             "subreddit",
+            "subreddit_id",
             "upvotes",
             "downvotes",
         ]
         read_only_fields = ["created_by", "created_at"]
 
-    def get_upvotes(self, obj):
-        return obj.upvotes.count()
-
-    def get_downvotes(self, obj):
-        return obj.downvotes.count()
-
-
 class CommentSerializer(serializers.ModelSerializer):
-    upvotes = serializers.SerializerMethodField()
-    downvotes = serializers.SerializerMethodField()
+    upvotes = serializers.IntegerField(read_only=True)
+    downvotes = serializers.IntegerField(read_only=True)
+
     created_by = UserSerializer(read_only=True)
 
     class Meta:
@@ -47,9 +55,3 @@ class CommentSerializer(serializers.ModelSerializer):
             "downvotes",
         ]
         read_only_fields = ["created_by", "post", "parent"]
-
-    def get_upvotes(self, obj):
-        return obj.upvotes.count()
-
-    def get_downvotes(self, obj):
-        return obj.downvotes.count()

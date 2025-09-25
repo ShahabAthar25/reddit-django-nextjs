@@ -10,6 +10,13 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Custom Colors */
+  --color-primary: #fff;
+  --color-secondary: #dbe4e9;
+  --color-accent-orange: #ff4500;
+  --color-accent-blue: #0a2f6c;
+  --color-txt: #181c1f;
 }
 
 @media (prefers-color-scheme: dark) {
